@@ -14,7 +14,9 @@ def ReadArtistDict(artist_list_path):
 
 
 class ArtistIdentificationDataset(Dataset):
-    def __init__(self, clip_list_path, spec_dir_path, slice_start_list, slice_length):
+    def __init__(self, clip_list_path, spec_dir_path, slice_start_list, slice_length, artist_list_path):
+        self.artist_dict = ReadArtistDict(artist_list_path)
+
         self.data = []
         with open(clip_list_path, "r") as fp:
             clip_list = fp.read().splitlines()
@@ -24,12 +26,12 @@ class ArtistIdentificationDataset(Dataset):
             with open(spec_file_path, "rb") as fp:
                 loaded_data = dill.load(fp)
             track_name = loaded_data[1]
-            artist_name = loaded_data[2]
+            artist_id = self.artist_dict[loaded_data[2]]
             clip_spec = loaded_data[0]
 
             for slice_start in slice_start_list:
                 slice_spec = clip_spec[:,slice_start:slice_start+slice_length]
-                self.data.append((artist_name, track_name, slice_spec))
+                self.data.append((artist_id, track_name, slice_spec))
 
     def __len__(self):
         return len(self.data)

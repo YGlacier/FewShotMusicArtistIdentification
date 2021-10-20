@@ -35,7 +35,7 @@ class ArtistIdentificationModel(nn.Module):
         self.model_rnn.add_module("GRU", nn.GRU(input_size= 128*6, hidden_size=32, num_layers=2, batch_first=True, dropout=0.3))
 
         # Dense - Softmax
-        self.model_dense.add_module("Dense", nn.Linear(17 * 32, 4))
+        self.model_dense.add_module("Dense", nn.Linear(17 * 32, 20))
         self.model_dense.add_module("SoftMax", nn.Softmax(dim=1))
 
     def forward(self, input):
