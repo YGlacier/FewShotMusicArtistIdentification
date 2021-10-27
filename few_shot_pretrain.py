@@ -5,17 +5,17 @@ import torch
 from torch.utils.data import DataLoader
 
 from Utility.Data import ArtistIdentificationDataset, ReadArtistDict
-from model import ArtistIdentificationModel
+from model import ArtistIdentificationModel, ArtistIdentificationFeatureModel, ArtistIdentificationClassifierModel
 
 clip_list_path = "./Data/20_artist_identification/train_clips.txt"
 spec_dir_path = "./Data/spec/"
 artist_list_path = "./Data/20_artist_identification/20_artist_list.txt"
-weight_dir = "./Weights/1/"
+weight_dir = "./Weights/4/"
 slice_length = 313
 batch_size = 16
-seed = 1
+seed = 4
 learn_rate = 0.0001
-total_epoch = 50
+total_epoch = 100
 
 artist_dict = ReadArtistDict(artist_list_path)
 
@@ -36,13 +36,15 @@ torch.manual_seed(seed)
 torch.cuda.manual_seed_all(seed)
 
 
-model = ArtistIdentificationModel().to(device)
-model.train()
+feature_model = ArtistIdentificationFeatureModel().to(device)
+feature_model.train()
+classifier_model = ArtistIdentificationClassifierModel().to(device)
+classifier_model.train()
 
 print("Model Initialized")
 
 loss_function = torch.nn.CrossEntropyLoss()
-optimizer = torch.optim.Adam(model.parameters(), lr=learn_rate)
+optimizer = torch.optim.Adam(list(feature_model.parameters()) + list(classifier_model.parameters()), lr=learn_rate)
 
 loss_list = []
 for epoch in range(total_epoch):
@@ -60,7 +62,8 @@ for epoch in range(total_epoch):
         label = data[0].to(device)
 
         optimizer.zero_grad()
-        output = model.forward(input)
+        feature = feature_model.forward(input)
+        output = classifier_model.forward(feature)
         loss = loss_function(output, label)
         loss.backward()
         optimizer.step()
@@ -71,8 +74,10 @@ for epoch in range(total_epoch):
             print('Epoch:%d, i:%d loss= %f' % (epoch + 1, i + 1, running_loss / 100))
             running_loss = 0.0
 
-    weight_path = weight_dir + str(seed) + "_" + str(epoch) + ".model"
-    torch.save(model.state_dict(), weight_path)
+    weight_path = weight_dir + str(seed) + "_" + str(epoch) +  "_feature" + ".model"
+    torch.save(feature_model.state_dict(), weight_path)
+    weight_path = weight_dir + str(seed) + "_" + str(epoch) +  "_classifier" + ".model"
+    torch.save(classifier_model.state_dict(), weight_path)
     loss_list.append(epoch_loss)
 
 np.savetxt(weight_dir + "loss.txt", loss_list, delimiter="\n")
