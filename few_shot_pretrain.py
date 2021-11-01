@@ -7,10 +7,10 @@ from torch.utils.data import DataLoader
 from Utility.Data import ArtistIdentificationDataset, ReadArtistDict
 from model import ArtistIdentificationModel, ArtistIdentificationFeatureModel, ArtistIdentificationClassifierModel
 
-clip_list_path = "./Data/20_artist_identification/train_clips.txt"
+clip_list_path = "./Data/few_shot_pretrain/train_clips.txt"
 spec_dir_path = "./Data/spec/"
-artist_list_path = "./Data/20_artist_identification/20_artist_list.txt"
-weight_dir = "./Weights/4/"
+artist_list_path = "./Data/few_shot_pretrain/pretrain_artist_list.txt"
+weight_dir = "./Weights/few_pre/4/"
 slice_length = 313
 batch_size = 16
 seed = 4
@@ -38,7 +38,7 @@ torch.cuda.manual_seed_all(seed)
 
 feature_model = ArtistIdentificationFeatureModel().to(device)
 feature_model.train()
-classifier_model = ArtistIdentificationClassifierModel().to(device)
+classifier_model = ArtistIdentificationClassifierModel(60).to(device)
 classifier_model.train()
 
 print("Model Initialized")

@@ -89,13 +89,13 @@ class ArtistIdentificationFeatureModel(nn.Module):
         return rnn_output
 
 class ArtistIdentificationClassifierModel(nn.Module):
-    def __init__(self):
+    def __init__(self, class_count):
         super(ArtistIdentificationClassifierModel, self).__init__()
 
         self.model_dense = nn.Sequential()
 
         # Dense - Softmax
-        self.model_dense.add_module("Dense", nn.Linear(17 * 32, 20))
+        self.model_dense.add_module("Dense", nn.Linear(17 * 32, class_count))
 
     def forward(self, input):
         return self.model_dense(input)

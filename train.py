@@ -15,7 +15,7 @@ slice_length = 313
 batch_size = 16
 seed = 1
 learn_rate = 0.0001
-total_epoch = 50
+total_epoch = 100
 
 artist_dict = ReadArtistDict(artist_list_path)
 

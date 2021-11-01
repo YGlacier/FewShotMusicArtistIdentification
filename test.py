@@ -4,6 +4,7 @@ import numpy as np
 import torch
 from torch.functional import Tensor
 from torch.utils.data.dataloader import DataLoader
+from sklearn.metrics import f1_score
 
 from model import ArtistIdentificationModel
 from Utility.Data import ArtistIdentificationDataset, ReadArtistDict
@@ -11,13 +12,13 @@ from Utility.Data import ArtistIdentificationDataset, ReadArtistDict
 clip_list_path = "./Data/20_artist_identification/validation_clips.txt"
 spec_dir_path = "./Data/spec/"
 artist_list_path = "./Data/20_artist_identification/20_artist_list.txt"
-seed = 4
+seed = 1
 weight_dir = "./Weights/" + str(seed) + "/"
 slice_length = 313
 batch_size = 16
 slice_start_list=[0, 156, 313, 469, 598]
 
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
 
 artist_dict = ReadArtistDict(artist_list_path=artist_list_path)
 with open(clip_list_path, "r") as fp:
@@ -42,6 +43,8 @@ for epoch in range(100):
 
     total_clip = 0.0
     correct_clip = 0.0
+    y_true = []
+    y_pred = []
     for clip in clip_data:
         clip_spec = clip[2]
         clip_artist = clip[0]
@@ -58,11 +61,13 @@ for epoch in range(100):
         total_clip += 1
         if most_vote == clip_artist:
             correct_clip += 1
-
+    y_true.append(clip_artist)
+    y_pred.append(most_vote)
     accuracy = correct_clip / total_clip
     accuracy_list.append(accuracy)
+    f1 = f1_score(y_true, y_pred, average="weighted")
 
-    print(str(epoch) + ": " + str(accuracy))
+    print(str(epoch) + "Acc: " + str(accuracy) + ", F1: " + str(f1))
     
 np.savetxt(weight_dir + "validation_accuracy.txt", accuracy_list, delimiter="\n")
 
