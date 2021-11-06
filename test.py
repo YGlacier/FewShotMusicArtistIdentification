@@ -18,7 +18,7 @@ slice_length = 313
 batch_size = 16
 slice_start_list=[0, 156, 313, 469, 598]
 
-device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda:2" if torch.cuda.is_available() else "cpu")
 
 artist_dict = ReadArtistDict(artist_list_path=artist_list_path)
 with open(clip_list_path, "r") as fp:
@@ -58,11 +58,14 @@ for epoch in range(100):
             vote[ouput_label] += 1
         
         most_vote = torch.argmax(Tensor(vote))
+
+        y_true.append(clip_artist)
+        y_pred.append(most_vote)
+        
         total_clip += 1
         if most_vote == clip_artist:
             correct_clip += 1
-    y_true.append(clip_artist)
-    y_pred.append(most_vote)
+    
     accuracy = correct_clip / total_clip
     accuracy_list.append(accuracy)
     f1 = f1_score(y_true, y_pred, average="weighted")
