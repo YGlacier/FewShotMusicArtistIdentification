@@ -6,18 +6,19 @@ from torch.functional import Tensor
 from torch.utils.data.dataloader import DataLoader
 from sklearn.metrics import f1_score
 
-from model import ArtistIdentificationModel
+from model import ArtistIdentificationModel, ArtistIdentificationFeatureModel, ArtistIdentificationClassifierModel
 from Utility.Data import ArtistIdentificationDataset, ReadArtistDict
 
-clip_list_path = "./Data/20_artist_identification/validation_clips.txt"
+clip_list_path = "./Data/few_shot_pretrain/validation_clips.txt"
 spec_dir_path = "./Data/spec/"
-artist_list_path = "./Data/20_artist_identification/20_artist_list.txt"
-seed = 1
-weight_dir = "./Weights/" + str(seed) + "/"
+artist_list_path = "./Data/few_shot_pretrain/pretrain_artist_list.txt"
+seed = 0
+device_id = 0
+weight_dir = "./Weights/few_pre/" + str(seed) + "/"
 slice_length = 313
 slice_start_list=[0, 156, 313, 469, 598]
 
-device = torch.device("cuda:2" if torch.cuda.is_available() else "cpu")
+device = torch.device(("cuda:" + str(device_id)) if torch.cuda.is_available() else "cpu")
 
 artist_dict = ReadArtistDict(artist_list_path=artist_list_path)
 with open(clip_list_path, "r") as fp:
@@ -33,12 +34,15 @@ for clip_id in clip_list:
         clip_spec = loaded_data[0]
     clip_data.append((artist_id, track_name, clip_spec))
 
-model = ArtistIdentificationModel().to(device)
-model.eval()
+feature_model = ArtistIdentificationFeatureModel().to(device)
+feature_model.eval()
+classifier_model = ArtistIdentificationClassifierModel(60).to(device)
+classifier_model.eval()
 
 accuracy_list = []
 for epoch in range(100):
-    model.load_state_dict(torch.load(weight_dir + str(seed) + "_" + str(epoch) + ".model"))
+    feature_model.load_state_dict(torch.load(weight_dir + str(seed) + "_" + str(epoch) + "_feature" + ".model"))
+    classifier_model.load_state_dict(torch.load(weight_dir + str(seed) + "_" + str(epoch) + "_classifier" + ".model"))
 
     total_clip = 0.0
     correct_clip = 0.0
@@ -48,11 +52,12 @@ for epoch in range(100):
         clip_spec = clip[2]
         clip_artist = clip[0]
 
-        vote = [0] * 20
+        vote = [0] * 60
         for slice_start in slice_start_list:
             slice_spec = clip_spec[:,slice_start:slice_start+slice_length]
             input=torch.Tensor(slice_spec).unsqueeze(0).unsqueeze(0).to(device)
-            output = model.forward(input)[0]
+            feature = feature_model.forward(input)
+            output = classifier_model.forward(feature)
             ouput_label = torch.argmax(output)
             vote[ouput_label] += 1
         
