@@ -9,7 +9,7 @@ from model import ArtistIdentificationModel, ArtistIdentificationFeatureModel, A
 
 spec_dir_path = "./Data/spec/"
 artist_list_path = "./Data/few_shot_train/few_shot_train_artist_list.txt"
-feature_model_weight_path = "./Weights/few_pre/0/"
+feature_model_weight_path = "./Weights/few_pre/0/0_18_feature.model"
 artist_track_dict_path = "./Data/few_shot_train/train_artist_track_dict.dill"
 track_clip_dict_path = "./Data/few_shot_train/train_track_clip_dict.dill"
 slice_length = 313
@@ -54,7 +54,7 @@ torch.cuda.manual_seed_all(seed)
 feature_model = ArtistIdentificationFeatureModel().to(device)
 feature_model.load_state_dict(torch.load(feature_model_weight_path))
 feature_model.eval()
-classifier_model = ArtistIdentificationClassifierModel().to(device)
+classifier_model = ArtistIdentificationClassifierModel(k_way).to(device)
 classifier_model.train()
 
 print("Model Initialized")
@@ -87,9 +87,9 @@ for epoch in range(total_epoch):
 
         running_loss += loss.item()
         epoch_loss += loss.item()
-        if i % 100 == 99:
-            print('Epoch:%d, i:%d loss= %f' % (epoch + 1, i + 1, running_loss / 100))
-            running_loss = 0.0
+        
+        print('Epoch:%d, i:%d loss= %f' % (epoch + 1, i + 1, running_loss / 100))
+        running_loss = 0.0
 
     weight_path = weight_dir + str(seed) + "_" + str(epoch) +  "_classifier" + ".model"
     torch.save(classifier_model.state_dict(), weight_path)
