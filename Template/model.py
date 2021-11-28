@@ -101,6 +101,11 @@ class ArtistIdentificationClassifierModel(nn.Module):
     def forward(self, input):
         return self.model_dense(input)
 
+    def reset_parameters(self):
+        for layers in self.children():
+            for layer in layers:
+                layer.reset_parameters()
+
 class ArtistIdentificationDistClassifierModel(nn.Module):
     def __init__(self, class_count):
         super(ArtistIdentificationDistClassifierModel, self).__init__()
@@ -123,3 +128,7 @@ class ArtistIdentificationDistClassifierModel(nn.Module):
         cos_dist = self.L(x_normalized)
         scores = self.scale_factor * (cos_dist)
         return scores
+
+    def reset_parameters(self):
+        for layer in self.children():
+            layer.reset_parameters()

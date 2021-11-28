@@ -6,58 +6,43 @@ from torch.functional import Tensor
 from torch.utils.data.dataloader import DataLoader
 from sklearn.metrics import f1_score
 
-from model import ArtistIdentificationModel, ArtistIdentificationFeatureModel, ArtistIdentificationClassifierModel
-from Utility.Data import ArtistIdentificationDataset, ReadArtistDict, ReadList, ReadDict, ArtistListToDict
+from model import *
+from Utility.Data import ArtistIdentificationDataset, ReadArtistDict
 
+clip_list_path = "./Data/few_shot_pretrain/validation_clips.txt"
 spec_dir_path = "./Data/spec/"
-artist_list_path = "./Data/few_shot_train/few_shot_train_artist_list.txt"
-feature_model_weight_path = "./Weights/few_pre/0/0_18_feature.model"
-artist_track_dict_path = "./Data/few_shot_train/validation_artist_track_dict.dill"
-track_clip_dict_path = "./Data/few_shot_train/validation_track_clip_dict.dill"
-feature_seed = 0
-classifier_seed = 0
-feature_weight_dir = "./Weights/few_pre/" + str(feature_seed) + "/"
-classifier_weight_dir = "./Weights/few/" + str(feature_seed) + "/"
+artist_list_path = "./Data/few_shot_pretrain/pretrain_artist_list.txt"
+seed = 1
+device_id = 0
+weight_dir = "./Weights/few_prepp/" + str(seed) + "/"
 slice_length = 313
 slice_start_list=[0, 156, 313, 469, 598]
 
-device_id = 0
 device = torch.device(("cuda:" + str(device_id)) if torch.cuda.is_available() else "cpu")
 
-k_way = 5
-k_shot = 5
-
-artist_track_dict = ReadDict(artist_track_dict_path)
-track_clip_dict = ReadDict(track_clip_dict_path)
-artist_list = ReadList(artist_list_path)
-used_artist_list = artist_list[0:k_way]
-used_artist_dict = ArtistListToDict(used_artist_list)
-clip_list = []
-for artist in used_artist_list:
-    track_list = artist_track_dict[artist]
-    for track in track_list:
-        clip = track_clip_dict[artist + "_" + track]
-        clip_list += clip
-
+artist_dict = ReadArtistDict(artist_list_path=artist_list_path)
+with open(clip_list_path, "r") as fp:
+    clip_list = fp.read().splitlines()
 clip_data = []
+
 for clip_id in clip_list:
     spec_file_path = spec_dir_path + str(clip_id) + ".dat"
     with open(spec_file_path, "rb") as fp:
         loaded_data = dill.load(fp)
         track_name = loaded_data[1]
-        artist_id = used_artist_dict[loaded_data[2]]
+        artist_id = artist_dict[loaded_data[2]]
         clip_spec = loaded_data[0]
     clip_data.append((artist_id, track_name, clip_spec))
 
 feature_model = ArtistIdentificationFeatureModel().to(device)
 feature_model.eval()
-classifier_model = ArtistIdentificationClassifierModel(k_way).to(device)
+classifier_model = ArtistIdentificationDistClassifierModel(60).to(device)
 classifier_model.eval()
-feature_model.load_state_dict(torch.load(feature_weight_dir + str(feature_seed) + "_" + str(22) + "_feature" + ".model"))
 
 accuracy_list = []
 for epoch in range(100):
-    classifier_model.load_state_dict(torch.load(classifier_weight_dir + str(classifier_seed) + "_" + str(epoch) + "_classifier" + ".model"))
+    feature_model.load_state_dict(torch.load(weight_dir + str(seed) + "_" + str(epoch) + "_feature" + ".model"))
+    classifier_model.load_state_dict(torch.load(weight_dir + str(seed) + "_" + str(epoch) + "_classifier" + ".model"))
 
     total_clip = 0.0
     correct_clip = 0.0
@@ -67,7 +52,7 @@ for epoch in range(100):
         clip_spec = clip[2]
         clip_artist = clip[0]
 
-        vote = [0] * k_way
+        vote = [0] * 60
         for slice_start in slice_start_list:
             slice_spec = clip_spec[:,slice_start:slice_start+slice_length]
             input=torch.Tensor(slice_spec).unsqueeze(0).unsqueeze(0).to(device)
@@ -91,7 +76,7 @@ for epoch in range(100):
 
     print(str(epoch) + "Acc: " + str(accuracy) + ", F1: " + str(f1))
     
-np.savetxt(classifier_weight_dir + "validation_accuracy.txt", accuracy_list, delimiter="\n")
+np.savetxt(weight_dir + "validation_accuracy.txt", accuracy_list, delimiter="\n")
 
             
 

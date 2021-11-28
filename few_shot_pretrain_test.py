@@ -6,7 +6,7 @@ from torch.functional import Tensor
 from torch.utils.data.dataloader import DataLoader
 from sklearn.metrics import f1_score
 
-from model import ArtistIdentificationModel, ArtistIdentificationFeatureModel, ArtistIdentificationClassifierModel
+from Model.model import ArtistIdentificationModel, ArtistIdentificationFeatureModel, ArtistIdentificationClassifierModel
 from Utility.Data import ArtistIdentificationDataset, ReadArtistDict
 
 clip_list_path = "./Data/few_shot_pretrain/validation_clips.txt"
