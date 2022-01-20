@@ -5,7 +5,7 @@ import torch
 from torch.utils.data import DataLoader
 
 from Utility.Data import ArtistIdentificationDataset, ReadArtistDict
-from model import *
+from Model.model import *
 
 clip_list_path = "./Data/few_shot_pretrain/train_clips.txt"
 spec_dir_path = "./Data/spec/"

@@ -1,11 +1,13 @@
 import torch
+import torch.nn as nn
 from torch.functional import Tensor
 from torch.utils.data import DataLoader
 from sklearn.metrics import f1_score
 from abc import abstractmethod
 
-class FewShotTemplate:
+class FewShotTemplate(nn.Module):
     def __init__(self, device, k_way, k_shot):
+        super(FewShotTemplate, self).__init__()
         self.device = device
         self.k_way = k_way
         self.k_shot = k_shot
@@ -79,7 +81,7 @@ class FewShotTemplate:
         accuracy = correct / float(count)
         f1 = f1_score(y_true, y_pred, average="weighted")
 
-        print("Acc: {:f} | F1: {:f}".format(accuracy, f1))
+        #print("Acc: {:f} | F1: {:f}".format(accuracy, f1))
         return accuracy, f1
 
     def mute_training_log(self):
